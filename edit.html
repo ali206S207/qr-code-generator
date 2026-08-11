@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تعديل رابط QR</title>
+<style>
+  :root{
+    --bg:#0d0d0f; --panel:#17171b; --panel2:#1f1f24;
+    --gold:#d4af37; --gold-light:#f0d878; --text:#f2f0ea; --muted:#a8a6a0;
+    --border:#2a2a30;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card{
+    width:100%; max-width:420px; background:var(--panel); border:1px solid var(--border);
+    border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+  h1{
+    text-align:center; font-size:22px; margin:0 0 6px;
+    background:linear-gradient(90deg,var(--gold-light),var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{text-align:center; color:var(--muted); font-size:13px; margin-bottom:22px;}
+  label{display:block; font-size:13px; color:var(--gold-light); margin:14px 0 6px; font-weight:600;}
+  label:first-of-type{margin-top:0;}
+  input{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); font-size:14px; outline:none;
+  }
+  input:focus{border-color:var(--gold);}
+  button{
+    margin-top:20px; width:100%; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light));
+    color:#1a1608; font-weight:700; font-size:15px; cursor:pointer;
+  }
+  button:disabled{opacity:.5; cursor:not-allowed;}
+  .status{margin-top:14px; font-size:13px; text-align:center; display:none; padding:10px; border-radius:8px;}
+  .status.ok{display:block; background:rgba(80,200,120,.1); color:#7ee0a0; border:1px solid #3a7a55;}
+  .status.err{display:block; background:rgba(232,115,75,.1); color:#f0a080; border:1px solid #7a4a35;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>تعديل وجهة الكود</h1>
+  <p class="sub">غيّر الرابط اللي الكود بتاعك بيوديك عليه من غير ما تعمل كود جديد</p>
+
+  <label>رقم الكود (ID)</label>
+  <input type="text" id="idInput" placeholder="مثال: a1b2c3d">
+
+  <label>مفتاح التعديل (Edit Key)</label>
+  <input type="text" id="keyInput" placeholder="المفتاح اللي اتديك وقت إنشاء الكود">
+
+  <label>الرابط الجديد</label>
+  <input type="url" id="urlInput" placeholder="https://example.com">
+
+  <button id="submitBtn" onclick="submitEdit()">تحديث الرابط</button>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ublurrzfsxikexfhqbns.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVibHVycnpmc3hpa2V4ZmhxYm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDEyODEsImV4cCI6MjA5MzExNzI4MX0.SPlW6T2iBg8tTkFbp1FXDKHaoZrkDlnUAxlUPNhIiFQ';
+
+const params = new URLSearchParams(window.location.search);
+const presetId = params.get('id');
+if(presetId){ document.getElementById('idInput').value = presetId; }
+
+async function submitEdit(){
+  const id = document.getElementById('idInput').value.trim();
+  const key = document.getElementById('keyInput').value.trim();
+  const url = document.getElementById('urlInput').value.trim();
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('submitBtn');
+
+  statusEl.className = 'status';
+  statusEl.style.display = 'none';
+
+  if(!id || !key || !url){
+    statusEl.className = 'status err';
+    statusEl.textContent = 'من فضلك املأ كل الحقول';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'جاري التحديث...';
+
+  try{
+    const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/update_qr_link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ p_id: id, p_edit_key: key, p_new_url: url })
+    });
+    const ok = await resp.json();
+    if(ok === true){
+      statusEl.className = 'status ok';
+      statusEl.textContent = '✓ اتحدث الرابط بنجاح، الكود دلوقتي بيودي على الوجهة الجديدة';
+    } else {
+      statusEl.className = 'status err';
+      statusEl.textContent = 'رقم الكود أو مفتاح التعديل غلط';
+    }
+  }catch(err){
+    statusEl.className = 'status err';
+    statusEl.textContent = 'حصل خطأ، حاول تاني';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'تحديث الرابط';
+}
+</script>
+</body>
+</html>
