@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جاري التحويل...</title>
+<style>
+  body{
+    margin:0; min-height:100vh; background:#0d0d0f; color:#f2f0ea;
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:24px;
+  }
+  .box{max-width:360px;}
+  .spinner{
+    width:40px; height:40px; border:3px solid #2a2a30; border-top-color:#d4af37;
+    border-radius:50%; margin:0 auto 18px; animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  h2{color:#f0d878; font-size:18px; margin:0 0 8px;}
+  p{color:#a8a6a0; font-size:13px; margin:0;}
+  .error{display:none;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="spinner" id="spinner"></div>
+  <h2 id="title">جاري تحويلك...</h2>
+  <p id="msg">لحظة واحدة من فضلك</p>
+</div>
+<script>
+const SUPABASE_URL = 'https://ublurrzfsxikexfhqbns.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVibHVycnpmc3hpa2V4ZmhxYm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDEyODEsImV4cCI6MjA5MzExNzI4MX0.SPlW6T2iBg8tTkFbp1FXDKHaoZrkDlnUAxlUPNhIiFQ';
+
+function fail(text){
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('title').textContent = 'مش لاقيين الرابط';
+  document.getElementById('msg').textContent = text;
+}
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get('id');
+
+if(!id){
+  fail('الكود ده مش فيه رقم تعريف صحيح.');
+} else {
+  fetch(SUPABASE_URL + '/rest/v1/rpc/get_qr_target', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ p_id: id })
+  })
+  .then(r => r.json())
+  .then(url => {
+    if(url && typeof url === 'string' && url.length > 0){
+      window.location.replace(url);
+    } else {
+      fail('الرابط ده اتحذف أو مش موجود.');
+    }
+  })
+  .catch(() => fail('حصل خطأ، حاول تفتح الرابط تاني.'));
+}
+</script>
+</body>
+</html>
