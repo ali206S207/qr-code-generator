@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مولد QR Code</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#0d0d0f; --panel:#17171b; --panel2:#1f1f24;
+    --gold:#d4af37; --gold-light:#f0d878; --text:#f2f0ea; --muted:#a8a6a0;
+    --border:#2a2a30;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:
+      radial-gradient(circle at 20% 0%, #1a1812 0%, transparent 40%),
+      radial-gradient(circle at 80% 100%, #1a1812 0%, transparent 40%),
+      var(--bg);
+    color:var(--text); font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap{width:100%; max-width:960px;}
+  h1{
+    text-align:center; font-size:28px; margin:0 0 6px;
+    background:linear-gradient(90deg,var(--gold-light),var(--gold));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    letter-spacing:.5px;
+  }
+  .sub{text-align:center; color:var(--muted); margin-bottom:28px; font-size:14px;}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:18px;
+    padding:28px; display:grid; grid-template-columns:1fr 320px; gap:28px;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+  @media(max-width:720px){ .card{grid-template-columns:1fr;} }
+  label{display:block; font-size:13px; color:var(--gold-light); margin:16px 0 6px; font-weight:600;}
+  label:first-child{margin-top:0;}
+  .field-hint{font-size:11px; color:var(--muted); margin-top:4px;}
+  input[type=text], input[type=url]{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); font-size:14px; outline:none;
+    transition:border-color .2s;
+  }
+  input[type=text]:focus, input[type=url]:focus{border-color:var(--gold);}
+  .row{display:flex; gap:12px;}
+  .row > div{flex:1;}
+  input[type=color]{
+    width:100%; height:42px; border:1px solid var(--border); border-radius:10px;
+    background:var(--panel2); padding:2px; cursor:pointer;
+  }
+  input[type=color]:disabled{opacity:.3; cursor:not-allowed;}
+  input[type=range]{width:100%; accent-color:var(--gold);}
+  .file-btn{
+    display:flex; align-items:center; gap:10px; background:var(--panel2);
+    border:1px dashed var(--border); border-radius:10px; padding:12px 14px;
+    cursor:pointer; font-size:13px; color:var(--muted); transition:.2s;
+  }
+  .file-btn:hover{border-color:var(--gold); color:var(--gold-light);}
+  .file-btn input{display:none;}
+  .file-name{color:var(--gold-light); font-size:12px; margin-top:6px; display:none;}
+  select{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); font-size:14px;
+  }
+  .checkbox-row{
+    display:flex; align-items:center; gap:10px; background:var(--panel2);
+    border:1px solid var(--border); border-radius:10px; padding:11px 14px; margin-top:14px;
+  }
+  .checkbox-row input{width:17px; height:17px; accent-color:var(--gold); cursor:pointer;}
+  .checkbox-row label{margin:0; cursor:pointer; font-size:13px; color:var(--text); font-weight:500;}
+  button.main{
+    margin-top:22px; width:100%; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-light));
+    color:#1a1608; font-weight:700; font-size:15px; cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+  }
+  button.main:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(212,175,55,.25);}
+  button.main:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+  button.download{
+    margin-top:14px; width:100%; padding:12px; border:1px solid var(--gold);
+    background:transparent; color:var(--gold-light); border-radius:12px;
+    font-weight:600; cursor:pointer; transition:.2s; font-size:14px;
+  }
+  button.download:hover{background:rgba(212,175,55,.1);}
+  button.download:disabled{opacity:.4; cursor:not-allowed;}
+  .preview{
+    background:var(--panel2); border:1px solid var(--border); border-radius:16px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:22px; gap:14px;
+  }
+  #qrHost{display:none;}
+  .checker-bg{
+    background-image:
+      linear-gradient(45deg,#3a3a40 25%,transparent 25%),
+      linear-gradient(-45deg,#3a3a40 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#3a3a40 75%),
+      linear-gradient(-45deg,transparent 75%,#3a3a40 75%);
+    background-size:16px 16px;
+    background-position:0 0,0 8px,8px -8px,-8px 0px;
+    background-color:#242428;
+  }
+  #qrCanvasWrap{
+    width:260px; height:260px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  #qrCanvasWrap canvas{width:100%; height:100%;}
+  .placeholder{color:#6b6b70; font-size:13px; text-align:center; padding:0 20px;}
+  .hint{color:var(--muted); font-size:12px; text-align:center;}
+  .warn{color:#e8b84b; font-size:12px; text-align:center; display:none;}
+  .dynamic-box{
+    display:none; width:100%; background:rgba(212,175,55,.08); border:1px solid var(--gold);
+    border-radius:12px; padding:14px; margin-top:8px;
+  }
+  .dynamic-box h4{margin:0 0 8px; color:var(--gold-light); font-size:13px;}
+  .dynamic-box .kv{font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .dynamic-box .val{
+    display:flex; gap:6px; align-items:center; background:var(--panel2);
+    border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:10px;
+  }
+  .dynamic-box .val span{flex:1; font-size:12px; color:var(--text); word-break:break-all; direction:ltr; text-align:left;}
+  .dynamic-box .val button{
+    background:var(--gold); color:#1a1608; border:none; border-radius:6px;
+    padding:5px 10px; font-size:11px; cursor:pointer; font-weight:700; flex-shrink:0;
+  }
+  .dynamic-box .danger{color:#e8734b; font-size:11px; margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>مولد QR Code</h1>
+  <p class="sub">حوّل أي رابط لكود QR، ضيف اللوجو بتاعك، واختار الإعدادات المناسبة للطباعة</p>
+
+  <div class="card">
+    <div>
+      <label>الرابط أو النص</label>
+      <input type="url" id="linkInput" placeholder="https://example.com">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="dynamicMode">
+        <label for="dynamicMode">اعمل الكود قابل للتعديل لاحقًا (رابط ديناميكي)</label>
+      </div>
+      <p class="field-hint">لو فعّلت الخيار ده، الكود مش هيحمل الرابط مباشرة — هيحمل رابط ثابت بيوديك لوجهتك الحقيقية، وتقدر تغيّر الوجهة دي في أي وقت من غير ما تعيد طباعة الكود.</p>
+
+      <div class="row">
+        <div>
+          <label>لون الكود</label>
+          <input type="color" id="fgColor" value="#000000">
+        </div>
+        <div>
+          <label>لون الخلفية</label>
+          <input type="color" id="bgColor" value="#ffffff">
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="transparentBg">
+        <label for="transparentBg">خلفية شفافة (PNG بدون خلفية)</label>
+      </div>
+
+      <label>اللوجو (اختياري)</label>
+      <label class="file-btn">
+        <span>📁 اختر صورة اللوجو</span>
+        <input type="file" id="logoInput" accept="image/*">
+      </label>
+      <div class="file-name" id="fileName"></div>
+
+      <label>حجم اللوجو</label>
+      <input type="range" id="logoSize" min="10" max="30" value="20">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="keepLogoTransparent">
+        <label for="keepLogoTransparent">اللوجو أصلاً بدون خلفية — سيبه شفاف زي ما هو</label>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>مستوى تصحيح الأخطاء</label>
+          <select id="errorLevel">
+            <option value="L">منخفض (L)</option>
+            <option value="M">متوسط (M)</option>
+            <option value="Q">جيد (Q)</option>
+            <option value="H" selected>الأعلى (H) — موصى به مع اللوجو</option>
+          </select>
+        </div>
+        <div>
+          <label>حجم الصورة الناتجة</label>
+          <select id="quality">
+            <option value="300">صغير — بطاقات (300px)</option>
+            <option value="600">متوسط — فلايرز (600px)</option>
+            <option value="1200" selected>كبير — بوسترات (1200px)</option>
+            <option value="2400">أقصى جودة — طباعة كبيرة (2400px)</option>
+          </select>
+        </div>
+      </div>
+      <p class="field-hint">مستوى تصحيح الأخطاء العالي (H) بيخلي الكود يشتغل حتى لو اتخدش أو الطباعة مش مثالية، وده أهم حاجة تحافظ عليها لو حاطط لوجو.</p>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="quietZone" checked>
+        <label for="quietZone">هامش أبيض حوالين الكود (بيمنع مشاكل السكان عند الطباعة)</label>
+      </div>
+
+      <label>نص أسفل الكود (اختياري)</label>
+      <input type="text" id="captionInput" placeholder="مثال: امسح الكود">
+
+      <button class="main" id="generateBtn" onclick="generateQR()">توليد QR Code</button>
+    </div>
+
+    <div class="preview">
+      <div id="qrCanvasWrap" class="checker-bg"><span class="placeholder" id="placeholderText">هيظهر الكود هنا بعد التوليد</span></div>
+      <div id="qrHost"></div>
+      <button class="download" id="downloadBtn" disabled onclick="downloadPNG()">⬇️ تحميل PNG</button>
+      <p class="hint">اضغط "توليد" الأول، بعدين حمّل الصورة</p>
+      <p class="warn" id="scanWarn">⚠️ اللوجو كبير نسبيًا — ممكن يأثر على قراءة الكود، جرب تصغّره أو ارفع مستوى تصحيح الأخطاء لـ H</p>
+
+      <div class="dynamic-box" id="dynamicBox">
+        <h4>🔗 بيانات الكود الديناميكي — احفظها دلوقتي</h4>
+        <div class="kv">رابط التعديل (افتحه في أي وقت عشان تغيّر الوجهة):</div>
+        <div class="val"><span id="editLinkVal"></span><button onclick="copyVal('editLinkVal')">نسخ</button></div>
+        <div class="kv">مفتاح التعديل (Edit Key):</div>
+        <div class="val"><span id="editKeyVal"></span><button onclick="copyVal('editKeyVal')">نسخ</button></div>
+        <div class="danger">⚠️ المفتاح ده مش متسجل عندنا كنص واضح — لو ضاع منك مش هنقدر نسترجعه ولا نغيّر الرابط تاني.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ublurrzfsxikexfhqbns.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVibHVycnpmc3hpa2V4ZmhxYm5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDEyODEsImV4cCI6MjA5MzExNzI4MX0.SPlW6T2iBg8tTkFbp1FXDKHaoZrkDlnUAxlUPNhIiFQ';
+const PAGES_BASE = 'https://ali206s207.github.io/qr-code-generator';
+
+let logoImg = null;
+let finalCanvas = null;
+
+document.getElementById('transparentBg').addEventListener('change', function(e){
+  document.getElementById('bgColor').disabled = e.target.checked;
+});
+
+document.getElementById('logoInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  document.getElementById('fileName').style.display='block';
+  document.getElementById('fileName').textContent = '✓ ' + file.name;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    logoImg = new Image();
+    logoImg.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function generateId(len){
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  let out = '';
+  for(let i=0;i<len;i++) out += chars[arr[i] % chars.length];
+  return out;
+}
+
+async function createDynamicLink(targetUrl){
+  const id = generateId(7);
+  const editKey = generateId(14);
+  const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/create_qr_link', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ p_id: id, p_target_url: targetUrl, p_edit_key: editKey })
+  });
+  if(!resp.ok){ throw new Error('فشل إنشاء الرابط الديناميكي'); }
+  return { id, editKey };
+}
+
+function copyVal(elId){
+  const text = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(text);
+}
+
+async function generateQR(){
+  let text = document.getElementById('linkInput').value.trim();
+  if(!text){ alert('من فضلك اكتب رابط أو نص الأول'); return; }
+
+  document.getElementById('scanWarn').style.display = 'none';
+  document.getElementById('dynamicBox').style.display = 'none';
+
+  const isDynamic = document.getElementById('dynamicMode').checked;
+  const genBtn = document.getElementById('generateBtn');
+
+  let dynInfo = null;
+  if(isDynamic){
+    genBtn.disabled = true;
+    genBtn.textContent = 'جاري إنشاء الرابط...';
+    try{
+      dynInfo = await createDynamicLink(text);
+      text = `${PAGES_BASE}/r.html?id=${dynInfo.id}`;
+    }catch(err){
+      alert('حصل خطأ وإحنا بننشئ الرابط الديناميكي، حاول تاني.');
+      genBtn.disabled = false;
+      genBtn.textContent = 'توليد QR Code';
+      return;
+    }
+    genBtn.disabled = false;
+    genBtn.textContent = 'توليد QR Code';
+  }
+
+  const logoPct = parseInt(document.getElementById('logoSize').value, 10) / 100;
+  if(logoImg && logoPct > 0.25 && document.getElementById('errorLevel').value !== 'H'){
+    document.getElementById('scanWarn').style.display = 'block';
+  }
+
+  const isTransparent = document.getElementById('transparentBg').checked;
+  const fg = document.getElementById('fgColor').value;
+  const bg = isTransparent ? 'rgba(255,255,255,0)' : document.getElementById('bgColor').value;
+  const level = document.getElementById('errorLevel').value;
+  const correctLevelMap = { L: QRCode.CorrectLevel.L, M: QRCode.CorrectLevel.M, Q: QRCode.CorrectLevel.Q, H: QRCode.CorrectLevel.H };
+  const size = 512;
+
+  const host = document.getElementById('qrHost');
+  host.innerHTML = '';
+
+  new QRCode(host, {
+    text: text,
+    width: size,
+    height: size,
+    colorDark: fg,
+    colorLight: bg,
+    correctLevel: correctLevelMap[level]
+  });
+
+  setTimeout(() => {
+    const qrCanvas = host.querySelector('canvas');
+    if(!qrCanvas){ return; }
+
+    const outSize = parseInt(document.getElementById('quality').value, 10);
+    const useMargin = document.getElementById('quietZone').checked;
+    const margin = useMargin ? Math.round(outSize * 0.08) : 0;
+    const captionText = document.getElementById('captionInput').value.trim();
+    const captionHeight = captionText ? Math.round(outSize * 0.11) : 0;
+
+    const qrDrawSize = outSize - margin * 2;
+    const totalHeight = outSize + captionHeight;
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = outSize;
+    outCanvas.height = totalHeight;
+    const ctx = outCanvas.getContext('2d');
+
+    if(!isTransparent){
+      ctx.fillStyle = document.getElementById('bgColor').value;
+      ctx.fillRect(0, 0, outSize, totalHeight);
+    }
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(qrCanvas, margin, margin, qrDrawSize, qrDrawSize);
+
+    if(captionText){
+      ctx.fillStyle = isTransparent ? fg : document.getElementById('bgColor').value === '#ffffff' ? '#000000' : fg;
+      ctx.font = `bold ${Math.round(captionHeight*0.45)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(captionText, outSize/2, outSize + captionHeight/2);
+    }
+
+    const logoBox = { size: qrDrawSize, x: margin, y: margin };
+
+    const finish = () => {
+      if(dynInfo){
+        document.getElementById('editLinkVal').textContent = `${PAGES_BASE}/edit.html?id=${dynInfo.id}`;
+        document.getElementById('editKeyVal').textContent = dynInfo.editKey;
+        document.getElementById('dynamicBox').style.display = 'block';
+      }
+    };
+
+    if(logoImg && logoImg.complete !== false && logoImg.naturalWidth){
+      drawLogoAndFinish(ctx, outCanvas, logoBox, isTransparent, finish);
+    } else if(logoImg){
+      logoImg.onload = () => drawLogoAndFinish(ctx, outCanvas, logoBox, isTransparent, finish);
+    } else {
+      finalizePreview(outCanvas);
+      finish();
+    }
+  }, 150);
+}
+
+function drawLogoAndFinish(ctx, outCanvas, box, isTransparent, cb){
+  const pct = parseInt(document.getElementById('logoSize').value, 10) / 100;
+  const logoSize = box.size * pct;
+  const x = box.x + (box.size - logoSize) / 2;
+  const y = box.y + (box.size - logoSize) / 2;
+  const centerX = box.x + box.size/2;
+  const centerY = box.y + box.size/2;
+
+  const keepTransparent = document.getElementById('keepLogoTransparent').checked;
+
+  if(!keepTransparent){
+    const pad = logoSize * 0.12;
+    const r = (logoSize + pad*2) / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, r, 0, Math.PI*2);
+    ctx.fillStyle = isTransparent ? '#ffffff' : document.getElementById('bgColor').value;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+  finalizePreview(outCanvas);
+  if(cb) cb();
+}
+
+function finalizePreview(outCanvas){
+  finalCanvas = outCanvas;
+  const wrap = document.getElementById('qrCanvasWrap');
+  wrap.innerHTML = '';
+  const previewCanvas = document.createElement('canvas');
+  previewCanvas.width = outCanvas.width;
+  previewCanvas.height = outCanvas.height;
+  previewCanvas.getContext('2d').drawImage(outCanvas, 0, 0);
+  wrap.style.width = '260px';
+  wrap.style.height = (260 * outCanvas.height / outCanvas.width) + 'px';
+  wrap.appendChild(previewCanvas);
+  document.getElementById('downloadBtn').disabled = false;
+}
+
+function downloadPNG(){
+  if(!finalCanvas) return;
+  const link = document.createElement('a');
+  link.download = 'qrcode.png';
+  link.href = finalCanvas.toDataURL('image/png', 1.0);
+  link.click();
+}
+</script>
+</body>
+</html>
